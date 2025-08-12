@@ -1,0 +1,159 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(uuid())
+  name        String
+  email       String?  @unique
+  phone       String?  @unique
+  password    String
+  role        UserRole
+  profileData Json?
+
+  courts       Court[]       @relation("CourtOwner")
+  bookings     Booking[]
+  competitions Competition[] @relation("CompetitionHost")
+  teamsLed     Team[]        @relation("TeamCaptain")
+  playerTeams  PlayerTeam[]
+  matchEvents  MatchEvent[]
+  rankings     Ranking[]
+}
+
+model Court {
+  id       String @id @default(uuid())
+  name     String
+  location String
+  ownerId  String
+  owner    User   @relation("CourtOwner", fields: [ownerId], references: [id])
+
+  bookings Booking[]
+}
+
+model Booking {
+  id        String        @id @default(uuid())
+  courtId   String
+  playerId  String
+  startTime DateTime
+  endTime   DateTime
+  status    BookingStatus
+
+  court  Court @relation(fields: [courtId], references: [id])
+  player User  @relation(fields: [playerId], references: [id])
+}
+
+model Competition {
+  id        String            @id @default(uuid())
+  name      String
+  hostId    String
+  type      CompetitionType
+  status    CompetitionStatus
+  startDate DateTime
+  endDate   DateTime
+
+  host     User      @relation("CompetitionHost", fields: [hostId], references: [id])
+  matches  Match[]
+  rankings Ranking[]
+}
+
+model Team {
+  id        String  @id @default(uuid())
+  name      String
+  logo      String?
+  captainId String
+  captain   User    @relation("TeamCaptain", fields: [captainId], references: [id])
+
+  playerTeams PlayerTeam[]
+  matches1    Match[]      @relation("Team1")
+  matches2    Match[]      @relation("Team2")
+}
+
+model PlayerTeam {
+  id       String @id @default(uuid())
+  playerId String
+  teamId   String
+
+  player User @relation(fields: [playerId], references: [id])
+  team   Team @relation(fields: [teamId], references: [id])
+
+  @@unique([playerId, teamId])
+}
+
+model Match {
+  id            String   @id @default(uuid())
+  competitionId String
+  team1Id       String
+  team2Id       String
+  date          DateTime
+  score         String? // Optional format: "3-2", or you can split this into team1Score, team2Score
+
+  competition Competition  @relation(fields: [competitionId], references: [id])
+  team1       Team         @relation("Team1", fields: [team1Id], references: [id])
+  team2       Team         @relation("Team2", fields: [team2Id], references: [id])
+  events      MatchEvent[]
+}
+
+model MatchEvent {
+  id        String         @id @default(uuid())
+  matchId   String
+  playerId  String
+  eventType MatchEventType
+  minute    Int
+
+  match  Match @relation(fields: [matchId], references: [id])
+  player User  @relation(fields: [playerId], references: [id])
+}
+
+model Ranking {
+  id            String @id @default(uuid())
+  competitionId String
+  playerId      String
+  rank          Int
+  points        Int
+
+  competition Competition @relation(fields: [competitionId], references: [id])
+  player      User        @relation(fields: [playerId], references: [id])
+
+  @@unique([competitionId, playerId])
+}
+
+enum UserRole {
+  PLAYER
+  OWNER
+  HOST
+}
+
+enum CompetitionType {
+  LEAGUE
+  TOURNAMENT
+}
+
+enum CompetitionStatus {
+  UPCOMING
+  ACTIVE
+  COMPLETED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+enum MatchEventType {
+  GOAL
+  ASSIST
+  YELLOW_CARD
+  RED_CARD
+}
