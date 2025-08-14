@@ -8,7 +8,7 @@ const prisma = new PrismaClient()
 async function main() {
     console.log('🌱 Seeding started...')
     await seedUsers()
-    await seedCourts()
+    // await seedCourts()
     // await otherSeeder()
     console.log('✅ Seeding finished.')
 }

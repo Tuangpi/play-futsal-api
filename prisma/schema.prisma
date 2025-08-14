@@ -32,11 +32,12 @@ model User {
 }
 
 model Court {
-  id       String @id @default(uuid())
+  id       String  @id @default(uuid())
   name     String
   location String
+  image    String?
   ownerId  String
-  owner    User   @relation("CourtOwner", fields: [ownerId], references: [id])
+  owner    User    @relation("CourtOwner", fields: [ownerId], references: [id])
 
   bookings Booking[]
 }
