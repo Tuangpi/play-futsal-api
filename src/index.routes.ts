@@ -2,8 +2,10 @@ import { Router } from "express";
 import { login, logout, refreshToken, register } from "./controllers/v1/Auth/auth.controller";
 import { authenticateJWT } from "./middleware/authenticateJWT";
 import { authorizeRole } from "./middleware/authorizeRole";
-import { addCourt } from "./controllers/v1/courts.controller";
+import { addCourt, getCourts } from "./controllers/v1/courts.controller";
 import { upload } from "./helpers/uploadFile";
+import { addCompetition } from "./controllers/v1/competitions.controller";
+import { getBookingStatus, getCompetitionStatus, getCompetitionType, getMatchEventType } from "./controllers/shared.controller";
 
 const router: Router = Router();
 
@@ -12,15 +14,18 @@ router.post('/login', login)
 router.post('/logout', logout)
 router.get("/refresh-token", refreshToken);
 
-router.post("/courts/add", authenticateJWT, authorizeRole("OWNER"), upload({ folderName: "courts" }).single("image"), addCourt);
+//SHARED ROUTES
+router.get("/booking-status", getBookingStatus);
+router.get("/competition-status", getCompetitionStatus);
+router.get("/competition-type", getCompetitionType);
+router.get("/match-event-type", getMatchEventType);
 
-router.get("/profile", authenticateJWT, (req, res) => {
-    res.json({ message: `Welcome ${JSON.stringify(req)}` });
-});
+//OWNER ROUTES
+router.post("/courts/add", authenticateJWT, authorizeRole("OWNER"),
+    upload({ folderName: "courts" }).single("image"), addCourt);
+router.get("/courts", authenticateJWT, authorizeRole("OWNER"), getCourts);
 
-router.get("/owner-only", authenticateJWT, authorizeRole("OWNER"), (req, res) => {
-    res.json({ message: "Only owners can see this" });
-});
-
+//HOST ROUTE
+router.post("/competitions/add", authenticateJWT, authorizeRole("HOST"), addCompetition);
 
 export default router;
